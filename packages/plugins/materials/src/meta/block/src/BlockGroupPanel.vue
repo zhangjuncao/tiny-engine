@@ -33,7 +33,15 @@ import { nextTick, reactive, watch, provide, inject, ref } from 'vue'
 import { Search } from '@opentiny/vue'
 import { iconSearch } from '@opentiny/vue-icon'
 import { PluginSetting } from '@opentiny/tiny-engine-common'
-import { useApp, useBlock, useModal, useResource, useMaterial, useNotify } from '@opentiny/tiny-engine-meta-register'
+import {
+  useBlock,
+  useModal,
+  useResource,
+  useMaterial,
+  useNotify,
+  getMetaApi,
+  META_SERVICE
+} from '@opentiny/tiny-engine-meta-register'
 import BlockGroupTransfer from './BlockGroupTransfer.vue'
 import BlockGroupFilters from './BlockGroupFilters.vue'
 
@@ -72,7 +80,7 @@ export default {
     const { isDefaultGroupId, isRefresh, selectedGroup, selectedBlockArray, getGroupList } = useBlock()
     const { panel, closePanel } = useGroupPanel()
     const { message } = useModal()
-    const appId = useApp().appInfoState.selectedId
+    const getAppId = () => getMetaApi(META_SERVICE.GlobalService).getState().appInfo.id
     const panelState = inject('panelState', {})
     const blockUsers = ref([])
     provide('blockUsers', blockUsers)
@@ -124,7 +132,7 @@ export default {
           return requestUpdateGroup({
             id: groupId,
             blocks,
-            app: appId
+            app: getAppId()
           }).then((res) => {
             const selectedId = selectedBlockArray.value.map((b) => b.id)
             const addedBlocks = res.blocks.filter((item) => selectedId.includes(item.id))
