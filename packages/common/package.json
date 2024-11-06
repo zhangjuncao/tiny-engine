@@ -1,6 +1,6 @@
 {
   "name": "@opentiny/tiny-engine-common",
-  "version": "2.0.0-rc.0",
+  "version": "2.0.0-rc.1",
   "publishConfig": {
     "access": "public"
   },
@@ -38,11 +38,11 @@
     "@opentiny/tiny-engine-meta-register": "workspace:*",
     "@opentiny/tiny-engine-utils": "workspace:*",
     "@vue/shared": "^3.3.4",
+    "axios": "~0.28.0",
     "css-tree": "^2.3.1",
     "eslint-linter-browserify": "8.57.0",
     "monaco-editor": "0.33.0",
     "prettier": "2.7.1",
-    "axios": "~0.28.0",
     "vue-draggable-next": "2.1.0"
   },
   "devDependencies": {
