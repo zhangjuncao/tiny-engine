@@ -419,13 +419,10 @@ export default {
     right: 20px;
   }
   .var {
-    padding: 12px;
+    padding: 12px 12px 0 12px;
   }
   .var-type-item {
     padding: 0 12px;
-  }
-  .tiny-form-item:first-child {
-    padding-bottom: 12px;
   }
   .tiny-form-item:not(:last-child) {
     margin-bottom: 12px;
@@ -441,6 +438,12 @@ export default {
   }
   :deep(.tiny-collapse-item__wrap) {
     padding: 0 12px;
+    .tiny-collapse-item__content {
+      padding: 0;
+      .tiny-form-item:first-child {
+        padding-bottom: 12px;
+      }
+    }
   }
 }
 
