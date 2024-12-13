@@ -223,7 +223,6 @@ export default {
   .line-style {
     padding: 0 8px 0 12px;
     display: block;
-    color: var(--ti-lowcode-setting-style-font-color);
     font-size: 12px;
     .line-text {
       display: block;
