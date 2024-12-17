@@ -12,7 +12,7 @@
     <template #content>
       <div class="actions">
         <tiny-button plain :disabled="!allowCreate" @click.stop="insertNewData"
-          ><icon-plus class="btn-icon"></icon-plus>新增静态数据</tiny-button
+          ><svg-icon name="add" class="btn-icon"></svg-icon>新增静态数据</tiny-button
         >
         <tiny-button plain :disabled="state.isBatchDeleteDisable" @click.stop="batchDelete"
           ><svg-icon class="btn-icon" name="delete"></svg-icon>删除</tiny-button
@@ -81,7 +81,7 @@
 import { reactive, ref, watchEffect, watch, computed } from 'vue'
 import { camelize, capitalize } from '@vue/shared'
 import { Grid, Pager, Input, Numeric, DatePicker, Switch, Slider, Link, Button } from '@opentiny/vue'
-import { iconPlus, iconUpload } from '@opentiny/vue-icon'
+import { iconUpload } from '@opentiny/vue-icon'
 import { PluginSetting } from '@opentiny/tiny-engine-common'
 import { utils } from '@opentiny/tiny-engine-utils'
 import { useModal, useLayout, useNotify, useCanvas } from '@opentiny/tiny-engine-meta-register'
@@ -108,7 +108,6 @@ export default {
     DataSourceRecordUpload,
     TinyLink: Link,
     TinyButton: Button,
-    IconPlus: iconPlus(),
     IconUpload: iconUpload()
   },
   props: {
@@ -594,19 +593,6 @@ export default {
     .all-delete {
       font-size: 14px;
     }
-  }
-  :deep(.tiny-button--default) {
-    height: 24px;
-    line-height: 24px;
-    display: flex;
-    align-items: center;
-    border: 1px solid var(--ti-lowcode-i18n-button-border-color);
-    border-radius: 4px;
-  }
-  .btn-icon {
-    margin-right: 6px;
-    color: var(--ti-lowcode-datasource-tip-color);
-    font-size: 12px;
   }
   .download {
     margin: 0 12px;

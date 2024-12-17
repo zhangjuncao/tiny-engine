@@ -108,6 +108,16 @@ export default {
   }
 }
 
+:deep(.tiny-tabs__item:first-child) {
+  border-top-left-radius: var(--te-base-border-radius-1);
+  border-bottom-left-radius: var(--te-base-border-radius-1);
+}
+
+:deep(.tiny-tabs__item:last-child) {
+  border-top-right-radius: var(--te-base-border-radius-1);
+  border-bottom-right-radius: var(--te-base-border-radius-1);
+}
+
 .tiny-collapse {
   flex: 1;
   overflow-y: scroll;

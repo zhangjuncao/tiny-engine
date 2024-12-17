@@ -364,11 +364,11 @@ export default {
 }
 
 .code-preview {
-  font-size: 14px;
+  font-size: 12px;
   line-height: 20px;
-  color: var(--ti-lowcode-birdge-code-preview-color);
-  background-color: var(--ti-lowcode-birdge-code-preview-bg-color);
-  border-radius: 6px;
+  background: var(--te-common-bg-container);
+  color: var(--te-common-text-weaken);
+  border-radius: 4px;
 
   & .pre-title {
     font-family: Microsoft YaHei;
