@@ -38,7 +38,7 @@
       </div>
     </div>
 
-    <div class="typography-row split">
+    <div class="typography-row font-split">
       <div class="left typography-col">
         <label
           :class="['typography-label', { 'is-setting': getSettingFlag(TYPO_PROPERTY.FontSize) }]"
@@ -46,12 +46,17 @@
         >
           <span>Size</span>
         </label>
-
-        <numeric-select
-          :name="getProperty(TYPO_PROPERTY.FontSize).name"
-          :numericalText="getProperty(TYPO_PROPERTY.FontSize).text"
-          @update="updateStyle"
-        />
+        <div class="font-size">
+          <select-configurator
+            v-model="state.sizeValue"
+            :options="sizeOptions"
+            @update:modelValue="selectFontSize"
+            allow-create
+            filterable
+            default-first-option
+          ></select-configurator>
+          PX
+        </div>
       </div>
 
       <div class="right typography-col">
@@ -183,6 +188,22 @@ export default {
 
     const fontFamilyOptions = [
       {
+        label: '微软雅黑',
+        value: '"Microsoft YaHei", "微软雅黑", sans-serif'
+      },
+      {
+        label: '苹方',
+        value: 'PingFang SC'
+      },
+      {
+        label: '黑体',
+        value: 'SimHei'
+      },
+      {
+        label: '宋体',
+        value: 'SimSun'
+      },
+      {
         label: 'Arial',
         value: 'Arial, "Helvetica Neue", Helvetica'
       },
@@ -312,6 +333,9 @@ export default {
       }
     ]
 
+    const sizes = ['9', '10', '11', '12', '14', '16', '18', '20', '24']
+    const sizeOptions = sizes.map((size) => ({ label: size, value: size }))
+
     const alignOptions = [
       {
         icon: 'text-align-left',
@@ -389,7 +413,8 @@ export default {
 
     const state = reactive({
       value: '400',
-      fontFamilyValue: 'Arial, "Helvetica Neue", Helvetica'
+      fontFamilyValue: '"Microsoft YaHei", "微软雅黑", sans-serif',
+      sizeValue: ''
     })
 
     const selectedAlign = ref('')
@@ -460,6 +485,12 @@ export default {
       }
     }
 
+    const selectFontSize = (type) => {
+      if (type) {
+        updateStyle({ 'font-size': type + 'px' })
+      }
+    }
+
     const selectFontFamily = (type) => {
       if (type) {
         updateStyle({ [TYPO_PROPERTY.FontFamily]: type })
@@ -480,8 +511,10 @@ export default {
       selectFontStyle,
       selectedTextDecoration,
       selectTextDecoration,
+      selectFontSize,
       openSetting,
       selectOptions,
+      sizeOptions,
       state,
       selectFontWeight,
       fontFamilyOptions,
@@ -512,6 +545,11 @@ export default {
 
     &.split {
       grid-template-columns: 45% auto;
+    }
+
+    &.font-split {
+      gap: 4px 8px;
+      grid-template-columns: 56% auto;
     }
 
     &.more {
@@ -608,6 +646,13 @@ export default {
     }
     .color-wrap {
       width: 210px;
+    }
+    .font-size {
+      display: flex;
+      font-size: 12px;
+      color: var(--te-common-text-weaken);
+      align-items: center;
+      gap: 4px;
     }
   }
 

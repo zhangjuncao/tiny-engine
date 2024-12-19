@@ -58,14 +58,19 @@ const getSnippet = (component) => {
 
 const generateNode = ({ type, component }) => {
   const snippet = getSnippet(component) || {}
+
   const schema = {
     componentName: component,
-    props: {},
-    ...snippet
+    ...snippet,
+    props: {
+      ...snippet.props,
+      className: getOptions(meta.id).useBaseStyle ? getOptions(meta.id).componentBaseStyle.className : ''
+    }
   }
 
   if (type === 'block') {
     schema.componentType = 'Block'
+    schema.props.className = getOptions(meta.id).useBaseStyle ? getOptions(meta.id).blockBaseStyle.className : ''
   }
 
   return schema
