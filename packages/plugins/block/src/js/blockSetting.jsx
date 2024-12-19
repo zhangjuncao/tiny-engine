@@ -42,7 +42,11 @@ import {
   fetchCategories,
   createCategory,
   updateCategory,
-  deleteCategory
+  deleteCategory,
+  fetchGroups,
+  createGroup,
+  updateGroup,
+  deleteGroup
 } from './http'
 import { constants, utils } from '@opentiny/tiny-engine-utils'
 import { generateBlock } from '@opentiny/tiny-engine-common/js/vscodeGenerateFile'
@@ -588,7 +592,9 @@ const getAppId = () => getMetaApi(META_SERVICE.GlobalService).getBaseInfo().id
 
 const getCategories = () => {
   const appId = getAppId()
-  fetchCategories({ appId }).then((res) => {
+  const fetchData = useBlock().shouldReplaceCategoryWithGroup() ? fetchGroups : fetchCategories
+
+  fetchData({ appId }).then((res) => {
     useBlock().setCategoryList(res)
   })
 }
@@ -597,7 +603,17 @@ const getCategories = () => {
 const createBlock = (block = {}) => {
   const { message } = useModal()
   const created_app = getAppId()
-  const params = { ...block, created_app }
+
+  const { categories, ...rest } = block
+  const extraParams = {}
+
+  if (useBlock().shouldReplaceCategoryWithGroup()) {
+    extraParams.groups = categories
+  } else {
+    extraParams.categories = categories
+  }
+
+  const params = { ...rest, ...extraParams, created_app }
 
   if (isVsCodeEnv) {
     const id = getMaterialHistory()?.id
@@ -643,6 +659,14 @@ const updateBlock = (block = {}) => {
     label
   } = block
   const nameCn = 'name_cn'
+
+  const extraParams = {}
+  if (useBlock().shouldReplaceCategoryWithGroup()) {
+    extraParams.groups = categories
+  } else {
+    extraParams.categories = categories
+  }
+
   requestUpdateBlock(
     id,
     {
@@ -652,9 +676,9 @@ const updateBlock = (block = {}) => {
       public_scope_tenants,
       public: publicType,
       tags,
-      categories: categories.map((category) => category.id),
       description,
-      label
+      label,
+      ...extraParams
     },
     {
       params: {
@@ -783,11 +807,14 @@ export const getBlockById = async (id) => {
 export const createOrUpdateCategory = async ({ categoryId, ...params }, isEdit) => {
   const appId = getAppId()
   params.app = Number(appId)
-  let requestFunc = updateCategory
+  const replaceCategoryWithGroup = useBlock().shouldReplaceCategoryWithGroup()
+  let requestFunc = replaceCategoryWithGroup ? updateGroup : updateCategory
 
   if (!isEdit) {
-    params.category_id = categoryId
-    requestFunc = createCategory
+    if (!replaceCategoryWithGroup) {
+      params.category_id = categoryId
+    }
+    requestFunc = replaceCategoryWithGroup ? createGroup : createCategory
   }
 
   const res = await requestFunc(params)
@@ -798,7 +825,8 @@ export const createOrUpdateCategory = async ({ categoryId, ...params }, isEdit) 
 }
 
 export const delCategory = async (id) => {
-  const res = await deleteCategory(id)
+  const deleteFn = useBlock().shouldReplaceCategoryWithGroup() ? deleteGroup : deleteCategory
+  const res = await deleteFn(id)
 
   if (res) {
     getCategories()
