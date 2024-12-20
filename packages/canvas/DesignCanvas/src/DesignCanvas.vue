@@ -184,9 +184,9 @@ export default {
         // 需要在canvas/render或内置组件里使用的方法
         getMaterial: useMaterial().getMaterial,
         addHistory: useHistory().addHistory,
-        registerBlock: useMaterial().registerBlock,
         request: getMetaApi(META_SERVICE.Http).getHttp(),
         ast,
+        getBlockByName: useMaterial().getBlockByName,
         useModal,
         useMessage,
         useNotify

@@ -125,6 +125,7 @@ const fetchAppState = async () => {
   const { id } = getMetaApi(META_SERVICE.GlobalService).getBaseInfo()
   const appData = await getMetaApi(META_SERVICE.Http).get(`/app-center/v1/api/apps/schema/${id}`)
   appSchemaState.pageTree = appData.componentsTree
+  appSchemaState.componentsMap = appData.componentsMap
   appSchemaState.dataSource = appData.dataSource?.list
   appSchemaState.dataHandler = appData.dataSource?.dataHandler || DEFAULT_INTERCEPTOR.dataHandler
   appSchemaState.willFetch = appData.dataSource?.willFetch || DEFAULT_INTERCEPTOR.willFetch

@@ -821,7 +821,13 @@ export const canvasApi = {
   setDesignMode,
   getDocument,
   canvasDispatch,
-  Builtin
+  Builtin,
+  removeBlockCompsCacheByName: (...args) => {
+    return canvasState.renderer.removeBlockCompsCacheByName(...args)
+  },
+  updateCanvas: (...args) => {
+    return canvasState.renderer.updateCanvas(...args)
+  }
 }
 
 export const initCanvas = ({ renderer, iframe, emit, controller }) => {

@@ -23,6 +23,7 @@ import {
   META_SERVICE
 } from '@opentiny/tiny-engine-meta-register'
 import meta from '../../meta'
+import { getBlockCompileRes, getBlockByName, updateBlockCompileCache } from './block-compile'
 
 const { camelize, capitalize } = utils
 const { MATERIAL_TYPE } = constants
@@ -140,7 +141,7 @@ const registerComponentToResource = (data) => {
   }
 }
 
-const fetchBlockDetail = async (blockName) => {
+export const fetchBlockDetail = async (blockName) => {
   const { getBlockAssetsByVersion } = useBlock()
   const currentVersion = componentState.componentsMap?.[blockName]?.version
   const block = (await getMetaApi(META_SERVICE.Http).get(`/material-center/api/block?label=${blockName}`))?.[0]
@@ -157,6 +158,7 @@ const fetchBlockDetail = async (blockName) => {
 
 /**
  * registerBlock 注册区块
+ * @deprecated
  * @param {String|Object} data 当为字符串时请求详细信息
  * @param {*} notFetchResouce 是否添加js css资源到页面
  * @returns
@@ -302,24 +304,21 @@ const addBlocks = (blocks) => {
   if (!Array.isArray(blocks) || !blocks.length) {
     return
   }
-  const promises = blocks?.map((item) => registerBlock(item, true))
 
-  Promise.allSettled(promises).then((blocks) => {
-    if (!blocks?.length) {
-      return
-    }
-    // 默认区块都会展示在默认分组中
-    if (!materialState.blocks?.[0]?.children) {
-      materialState.blocks.push({
-        groupId: useBlock().DEFAULT_GROUP_ID,
-        groupName: useBlock().DEFAULT_GROUP_NAME,
-        children: []
-      })
-    }
-    materialState.blocks[0].children.unshift(
-      ...blocks.filter((res) => res.status === 'fulfilled').map((res) => res.value)
-    )
-  })
+  // 提前构建区块
+  blocks.map((item) => getBlockCompileRes(item))
+
+  // 默认区块都会展示在默认分组中
+  if (!materialState.blocks?.[0]?.children) {
+    materialState.blocks.push({
+      groupId: useBlock().DEFAULT_GROUP_ID,
+      groupName: useBlock().DEFAULT_GROUP_NAME,
+      children: []
+    })
+  }
+
+  // 区块存到物料列表
+  materialState.blocks[0].children.unshift(...blocks)
 }
 
 /**
@@ -429,6 +428,15 @@ const initMaterial = ({ isInit = true, appData = {} } = {}) => {
   }
 }
 
+/**
+ * 增加区块缓存
+ * @param {String} id 区块 id，也就是 label 字段
+ * @param {Object} resource 区块信息，区块详情中的 content 字段
+ */
+export const addBlockResources = (id, resource) => {
+  blockResource.set(id, resource)
+}
+
 export default function () {
   return {
     materialState, // 存放着组件、物料侧区块、第三方依赖信息
@@ -443,6 +451,10 @@ export default function () {
     addMaterials, // 添加多个物料
     registerBlock, // 注册新的区块
     updateCanvasDependencies, //传入新的区块，获取新增区块的依赖，更新画布中的组件依赖
-    getConfigureMap // 获取物料组件的配置信息
+    getConfigureMap, // 获取物料组件的配置信息
+    getBlockByName,
+    getBlockCompileRes,
+    addBlockResources,
+    updateBlockCompileCache
   }
 }

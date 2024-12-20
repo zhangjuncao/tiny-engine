@@ -16,7 +16,14 @@ import TinyVue from '@opentiny/vue'
 import * as TinyVueIcon from '@opentiny/vue-icon'
 import { useBroadcastChannel, useThrottleFn } from '@vueuse/core'
 import { constants, utils as commonUtils } from '@opentiny/tiny-engine-utils'
-import renderer, { parseData, setConfigure, setController, globalNotify, isStateAccessor } from './render'
+import renderer, {
+  parseData,
+  setConfigure,
+  setController,
+  globalNotify,
+  isStateAccessor,
+  removeBlockCompsCacheByName
+} from './render'
 import { setContext, getContext, setCondition, context, getDesignMode, setDesignMode } from './context'
 import CanvasEmpty from './CanvasEmpty.vue'
 
@@ -345,6 +352,7 @@ const defaultRenderer = function () {
   }
 
   return h(
+    // TODO: 这里顶层的 i18n-host 在不支持 webComponent 的区块之后，应该也不需要webComponent 的 i18n provider 了
     'tiny-i18n-host',
     {
       locale: 'zh_CN',
@@ -362,6 +370,9 @@ const setRenderer = (fn) => {
   canvasRenderer = fn
 }
 
+const updateCanvas = () => {
+  refreshKey.value++
+}
 const throttleUpdateSchema = useThrottleFn(
   () => {
     window.host.patchLatestSchema(schema)
@@ -493,5 +504,7 @@ export const api = {
   getRenderer,
   setRenderer,
   getDesignMode,
-  setDesignMode
+  setDesignMode,
+  removeBlockCompsCacheByName,
+  updateCanvas
 }
