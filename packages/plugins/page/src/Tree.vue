@@ -1,8 +1,24 @@
 <template>
   <div class="draggable-tree">
-    <div :class="['row', { active: active === node.id }]" v-for="node of list" :key="node.id">
+    <div
+      v-for="(node, rowIndex) of filteredNodesWithAncestors"
+      :class="[
+        'row',
+        {
+          active: active === node.id,
+          ['hover-border']: hoveringNodeId === node.id
+        }
+      ]"
+      :key="node.id"
+      draggable="true"
+      @dragstart="handleDragStart($event, node)"
+      @dragover="handleDragOver($event, node)"
+      @dragenter="handleDragOver($event, node)"
+      @drop="handleDrop($event, node)"
+      @dragend="handleDragEnd"
+    >
       <div class="content" @click="handleClickRow(node)">
-        <span v-for="i in node.level - 1" :key="i" class="gap"></span>
+        <layer-lines :line-data="layerLine[rowIndex]" :level="node.level"></layer-lines>
         <div class="prefix-icon">
           <svg-icon v-if="node.rawData.isPage" name="text-page-common"></svg-icon>
           <svg-icon v-else name="text-page-folder-closed"></svg-icon>
@@ -15,13 +31,13 @@
 </template>
 
 <script setup>
-import { computed, defineProps, defineEmits } from 'vue'
+import { computed, defineEmits, defineProps, ref } from 'vue'
+import LayerLines from './LayerLines.vue'
 
-// TODO filter 功能
 const props = defineProps({
   data: {
     type: Object,
-    default: () => ({})
+    required: true
   },
   idKey: {
     type: String,
@@ -37,12 +53,18 @@ const props = defineProps({
   },
   active: {
     type: String
+  },
+  filterValue: {
+    type: String,
+    default: ''
+  },
+  rootId: {
+    type: [String, Number],
+    default: 'root'
   }
 })
 
-const emit = defineEmits(['clickRow'])
-
-const ROOT_ID = '0'
+const emit = defineEmits(['clickRow', 'moveNode'])
 
 const flattenTreeData = (node, parentId, level = 0) => {
   const { idKey, labelKey, childrenKey } = props
@@ -67,12 +89,115 @@ const flattenTreeData = (node, parentId, level = 0) => {
   return result
 }
 
-const list = computed(() => {
-  return flattenTreeData({ id: ROOT_ID, children: props.data }).slice(1)
+const nodes = computed(() => {
+  return flattenTreeData({ [props.idKey]: props.rootId, [props.childrenKey]: props.data }).slice(1)
+})
+
+const nodesMap = computed(() => {
+  return nodes.value.reduce((result, node) => {
+    result[node.id] = node
+    return result
+  }, {})
+})
+
+const filteredNodes = computed(() => {
+  return nodes.value.filter((node) => node.label.toLowerCase().includes(props.filterValue))
+})
+
+const getAncestorIds = (nodeId) => {
+  const currentNode = nodesMap.value[nodeId]
+
+  if (!currentNode || !currentNode.parentId) {
+    return []
+  }
+
+  const ancestors = getAncestorIds(currentNode.parentId)
+
+  ancestors.push(currentNode.parentId)
+
+  return ancestors
+}
+
+const filteredNodesWithAncestors = computed(() => {
+  const idSet = new Set()
+
+  for (const node of filteredNodes.value) {
+    idSet.add(node.id)
+    for (const id of getAncestorIds(node.id)) {
+      idSet.add(id)
+    }
+  }
+
+  return nodes.value.filter((node) => idSet.has(node.id))
+})
+
+const lines = {
+  node: 0b01, // └
+  layer: 0b10, // │
+  layerNode: 0b11 // ├
+}
+
+const layerLine = computed(() => {
+  const result = {}
+
+  const nodes = filteredNodesWithAncestors.value
+
+  for (const [index, node] of nodes.entries()) {
+    result[index] = result[index] || {}
+    result[index][node.level - 1] = lines.node
+
+    if (node.parentId !== props.rootId) {
+      const parentIndex = nodes.findIndex((item) => item.id === node.parentId)
+      for (let i = parentIndex + 1; i < index; i++) {
+        result[i][node.level - 1] = (result[i][node.level - 1] || 0) | lines.layer
+      }
+    }
+  }
+
+  return result
 })
 
 const handleClickRow = (node) => {
   emit('clickRow', node)
+}
+
+const draggedNode = ref(null)
+const hoveringNodeId = ref(null)
+
+const handleDragStart = (event, node) => {
+  draggedNode.value = node
+}
+
+// dragover和dragenter事件回调函数都为handleDragOver。跨行拖动时，禁止拖拽图标可能会闪一下，所以将dragenter事件也加上回调函数
+const handleDragOver = (event, node) => {
+  const isDescendant = getAncestorIds(node.id).includes(draggedNode.value.id)
+
+  if (!isDescendant) {
+    // 阻止默认行为以允许放置
+    event.preventDefault()
+    hoveringNodeId.value = node.id
+  }
+}
+
+const handleDrop = (event, node) => {
+  event.preventDefault()
+
+  const dragged = draggedNode.value
+  draggedNode.value = null
+
+  if (!dragged) {
+    return
+  }
+
+  const isDescendant = getAncestorIds(node.id).includes(dragged.id)
+
+  if (!isDescendant && dragged.id !== node.id && dragged.parentId !== node.id) {
+    emit('moveNode', dragged, node)
+  }
+}
+
+const handleDragEnd = () => {
+  hoveringNodeId.value = null
 }
 </script>
 
@@ -91,14 +216,12 @@ const handleClickRow = (node) => {
     &:hover {
       background-color: var(--te-common-bg-container);
     }
+
     .content {
       flex: 1;
       display: flex;
       align-items: center;
       overflow: hidden;
-    }
-    .gap {
-      width: 16px;
     }
     label {
       flex: 1;
@@ -122,6 +245,9 @@ const handleClickRow = (node) => {
       svg {
         color: var(--te-common-bg-primary-checked);
       }
+    }
+    &.hover-border {
+      border: 1px solid var(--te-common-border-checked);
     }
   }
 }

@@ -1,6 +1,6 @@
 <template>
   <div class="app-manage-search">
-    <tiny-search v-model="state.pageSearchValue" clearable placeholder="搜索" @update:modelValue="searchPageData">
+    <tiny-search v-model="state.pageSearchValue" clearable placeholder="搜索">
       <template #prefix>
         <tiny-icon-search />
       </template>
@@ -13,15 +13,19 @@
         <span class="title">{{ groupItem.groupName }}</span>
       </template>
       <div class="app-manage-tree">
-        <!-- TODO 1. filters; 2. lock, home icons; 3. pageTreeKey是否需要？ -->
         <draggble-tree
           :data="groupItem.data"
           label-key="name"
           :active="state.currentNodeData.id"
+          :filter-value="state.pageSearchValue"
+          :root-id="pageSettingState.ROOT_ID"
           @click-row="handleClickRow"
+          @move-node="handleMoveNode"
         >
           <template #row-suffix="{ node }">
             <div :class="['actions']">
+              <svg-icon v-if="isPageLocked(node.rawData)" name="locked"></svg-icon>
+              <svg-icon v-if="node.rawData.isHome" name="home"></svg-icon>
               <tiny-popover
                 :ref="(el) => setPopoverRef(el, node.id)"
                 placement="bottom-start"
@@ -39,7 +43,7 @@
                   </div>
                 </div>
                 <template #reference>
-                  <svg-icon name="ellipsis"></svg-icon>
+                  <svg-icon name="ellipsis" class="auto-hidden"></svg-icon>
                 </template>
               </tiny-popover>
             </div>
@@ -60,12 +64,14 @@ import {
   usePage,
   useBreadcrumb,
   useLayout,
+  useNotify,
   useMessage,
   getMetaApi,
   META_SERVICE
 } from '@opentiny/tiny-engine-meta-register'
 import { isEqual } from '@opentiny/vue-renderless/common/object'
 import { getCanvasStatus } from '@opentiny/tiny-engine-common/js/canvas'
+import { handlePageUpdate } from '@opentiny/tiny-engine-common/js/http'
 import { constants } from '@opentiny/tiny-engine-utils'
 import { closePageSettingPanel } from './PageSetting.vue'
 import { closeFolderSettingPanel } from './PageFolderSetting.vue'
@@ -98,26 +104,22 @@ export default {
       changeTreeData,
       isCurrentDataSame,
       getPageList,
+      resetPageData,
       STATIC_PAGE_GROUP_ID,
       COMMON_PAGE_GROUP_ID
     } = usePage()
-    const { fetchPageDetail } = http
+    const { fetchPageDetail, requestUpdatePage } = http
     const { setBreadcrumbPage } = useBreadcrumb()
     const getAppId = () => getMetaApi(META_SERVICE.GlobalService).getBaseInfo().id
 
     const state = reactive({
       pageSearchValue: '',
       collapseValue: [STATIC_PAGE_GROUP_ID, COMMON_PAGE_GROUP_ID],
-      currentNodeData: {}
+      currentNodeData: { id: getMetaApi(META_SERVICE.GlobalService).getBaseInfo().pageId }
     })
-
-    const searchPageData = (_value) => {
-      // TODO
-    }
 
     const refreshPageList = async (appId) => {
       const pages = await getPageList(appId)
-      searchPageData(state.pageSearchValue)
 
       return pages
     }
@@ -243,9 +245,12 @@ export default {
       nodeClick(null, node.rawData)
     }
 
+    const isPageLocked = (pageData) => {
+      return getCanvasStatus(pageData.occupier).state === PAGE_STATUS.Lock
+    }
+
     const handleClickPageSettings = (node) => {
-      const isPageLocked = getCanvasStatus(node.rawData.occupier).state === PAGE_STATUS.Lock
-      openSettingPanel(null, node.rawData, isPageLocked)
+      openSettingPanel(null, node.rawData, isPageLocked(node.rawData))
     }
 
     const createPage = (node) => {
@@ -256,22 +261,15 @@ export default {
       emit('createFolder', node.id)
     }
 
-    const copyPage = () => {
-      // TODO
-    }
-
-    const deleteNode = () => {
-      // TODO
-    }
-
     const rowOperations = [
       { type: 'settings', label: '设置', action: handleClickPageSettings },
       { type: 'divider' },
       { type: 'createPage', label: '新建子页面', action: createPage },
-      { type: 'createFolder', label: '新建子文件夹', action: createFolder },
-      { type: 'divider' },
-      { type: 'copy', label: '复制页面', action: copyPage },
-      { type: 'delete', label: '删除', class: ['danger'], action: deleteNode }
+      { type: 'createFolder', label: '新建子文件夹', action: createFolder }
+      // TODO 复制和删除的逻辑耦合在其他组件内，暂时屏蔽
+      // { type: 'divider' },
+      // { type: 'copy', label: '复制页面', action: copyPage },
+      // { type: 'delete', label: '删除', class: ['danger'], action: deleteNode }
     ].map((item) => ({
       ...item,
       action: (node) => {
@@ -283,12 +281,82 @@ export default {
 
     const getRowOperations = (groupId, node) => {
       if (groupId === COMMON_PAGE_GROUP_ID) {
-        return rowOperations.slice(0, 2).concat(rowOperations.slice(5))
+        return rowOperations.slice(0, 1)
       }
       if (!node.rawData.isPage) {
         return rowOperations.filter((item) => item.type !== 'copy')
       }
       return rowOperations
+    }
+
+    const updatePage = (pageDetail) => {
+      const { id, name, page_content } = pageDetail
+      const params = {
+        ...pageDetail,
+        page_content: {
+          ...page_content,
+          fileName: name
+        }
+      }
+
+      const isCurEditPage = pageState?.currentPage?.id === id
+
+      return handlePageUpdate(id, params, false, isCurEditPage)
+    }
+
+    const updateFolder = (pageDetail) => {
+      const { id } = pageDetail
+
+      // requestUpdatePage加了then和catch回调函数，而handlePageUpdate没有加，是因为handlePageUpdate内部都已经有了类似逻辑
+      return requestUpdatePage(id, { ...pageDetail, page_content: null })
+        .then(() => {
+          useNotify({
+            type: 'success',
+            message: '更新文件夹成功!'
+          })
+        })
+        .catch((error) => {
+          useNotify({
+            type: 'error',
+            title: '更新文件夹失败',
+            message: JSON.stringify(error?.message || error)
+          })
+        })
+        .finally(() => {
+          pageSettingState.updateTreeData()
+          pageSettingState.isNew = false
+        })
+    }
+
+    const handleMoveNode = (dragged, newParent) => {
+      if (isEqual(pageSettingState.currentPageData, pageSettingState.currentPageDataCopy)) {
+        closePageSettingPanel()
+        closeFolderSettingPanel()
+        pageSettingState.currentPageData.id = dragged.id
+        changeTreeData(newParent.id, dragged.parentId)
+        resetPageData()
+        // TODO 页面更换父节点后，原来每次变更需要填写变更信息
+        fetchPageDetail(dragged.id).then((pageDetail) => {
+          pageDetail.parentId = newParent.id
+          if (pageDetail.isPage) {
+            updatePage(pageDetail)
+          } else {
+            updateFolder(pageDetail)
+          }
+        })
+      } else {
+        confirm({
+          title: '提示',
+          message: '更改关未保存，是否要放弃这些更改？',
+          exec: () => {
+            if (!pageSettingState.isNew) {
+              changeTreeData(pageSettingState.oldParentId, pageSettingState.currentPageData.parentId)
+              Object.assign(pageSettingState.currentPageData, pageSettingState.currentPageDataCopy)
+            }
+            closePageSettingPanel()
+          }
+        })
+      }
     }
 
     useMessage().subscribe({
@@ -317,12 +385,13 @@ export default {
       state,
       switchPage,
       pageSettingState,
-      searchPageData,
       setPopoverRef,
       IconFolderOpened: IconFolderOpened(),
       IconFolderClosed: IconFolderClosed(),
       getRowOperations,
       handleClickRow,
+      handleMoveNode,
+      isPageLocked,
       handleClickPageSettings
     }
   }
@@ -419,19 +488,19 @@ export default {
     }
   }
   .actions {
-    display: none;
+    display: flex;
     align-items: center;
     gap: 8px;
     svg {
       color: var(--te-common-icon-secondary);
       outline: none;
     }
-    &.show {
-      display: flex;
+    .auto-hidden {
+      display: none;
     }
   }
-  .row:hover .actions {
-    display: flex;
+  .row:hover .actions .auto-hidden {
+    display: unset;
   }
 }
 </style>
@@ -441,6 +510,7 @@ export default {
   padding: 0;
   margin-top: 4px;
   .operation-list {
+    min-width: 110px;
     padding: 8px 0;
     & > div {
       padding: 0 12px;
