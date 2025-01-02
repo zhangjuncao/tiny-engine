@@ -212,6 +212,21 @@ const getPageList = async (appId) => {
 }
 
 /**
+ * @param {string | number} id
+ * @param {(string | number)[]} ancestors
+ * @returns {(string | number)[]}
+ */
+const getAncestorsRecursively = (id) => {
+  const pageNode = pageSettingState.treeDataMapping[id]
+
+  if (pageNode.id === pageSettingState.ROOT_ID) {
+    return []
+  }
+
+  return [pageNode].concat(getAncestorsRecursively(pageNode.parentId))
+}
+
+/**
  * @param {string | number} id page Id
  * @param {boolean} withFolders default `false`
  * @returns {(string | number)[]}
@@ -222,28 +237,25 @@ const getAncestors = async (id, withFolders) => {
     await getPageList(appId)
   }
 
-  /**
-   * @param {string | number} id
-   * @param {(string | number)[]} ancestors
-   * @returns {(string | number)[]}
-   */
-  const getAncestorsRecursively = (id) => {
-    const pageNode = pageSettingState.treeDataMapping[id]
-
-    if (pageNode.id === pageSettingState.ROOT_ID) {
-      return []
-    }
-
-    return [pageNode].concat(getAncestorsRecursively(pageNode.parentId))
-  }
-
   const ancestorsWithSelf = getAncestorsRecursively(id)
   const ancestors = ancestorsWithSelf.slice(1).reverse()
 
   if (withFolders) {
     return ancestors.map((item) => item.id)
   }
+
   return ancestors.filter((item) => item.isPage).map((item) => item.id)
+}
+
+const getFamily = async (id) => {
+  if (pageSettingState.pages.length === 0) {
+    const appId = getMetaApi(META_SERVICE.GlobalService).getBaseInfo().id
+    await getPageList(appId)
+  }
+
+  return getAncestorsRecursively(id)
+    .filter((item) => item.isPage)
+    .reverse()
 }
 
 export default () => {
@@ -261,6 +273,7 @@ export default () => {
     isChangePageData,
     getPageList,
     getAncestors,
+    getFamily,
     STATIC_PAGE_GROUP_ID,
     COMMON_PAGE_GROUP_ID
   }
