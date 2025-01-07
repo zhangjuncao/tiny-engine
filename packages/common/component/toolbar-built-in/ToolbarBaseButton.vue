@@ -56,9 +56,8 @@ export default {
     right: 2px;
     z-index: 100;
   }
-}
-
-.save-title {
-  margin: 0 6px;
+  .svg-icon.svg-icon.svg-icon {
+    color: var(--te-common-icon-primary);
+  }
 }
 </style>

@@ -14,6 +14,7 @@
       label-align
       :model="formState"
       :rules="formRules"
+      validate-type="text"
     >
       <tiny-form-item label="版本号" prop="version">
         <tiny-input v-model="formState.version" placeholder="请输入X.Y.Z格式版本号，如1.0.0"></tiny-input>
