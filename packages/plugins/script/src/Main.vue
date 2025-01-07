@@ -102,7 +102,7 @@ export default {
   width: 50vw;
   height: 100%;
   background: var(--ti-lowcode-plugin-js-bg);
-  box-shadow: 6px 0px 3px 0px rgba(0, 0, 0, 0.05);
+  box-shadow: 6px 0px 3px 0px var(--te-base-box-shadow-rgba-3);
   position: absolute;
   left: 0;
   top: 0;

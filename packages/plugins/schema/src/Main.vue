@@ -175,7 +175,7 @@ export default {
   top: var(--base-top-panel-height);
   left: 41px;
   background: var(--ti-lowcode-common-component-bg);
-  box-shadow: 6px 0px 3px 0px rgba(0, 0, 0, 0.05);
+  box-shadow: 6px 0px 3px 0px var(--te-base-box-shadow-rgba-3);
   z-index: 1000;
   .source-code-header {
     display: flex;

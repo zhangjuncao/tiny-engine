@@ -434,7 +434,7 @@ export default {
 
 <style lang="less" scoped>
 .plugin-panel-i18n {
-  box-shadow: 6px 0px 3px 0px rgba(0, 0, 0, 0.05);
+  box-shadow: 6px 0px 3px 0px var(--te-base-box-shadow-rgba-3);
 }
 .stripe-tiny-grid {
   word-wrap: break-word;

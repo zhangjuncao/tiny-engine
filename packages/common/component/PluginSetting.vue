@@ -129,7 +129,7 @@ export default {
   overflow: hidden;
   border-left: 1px solid var(--ti-lowcode-plugin-panel-header-border-bottom-color);
   &:not(.second-panel) {
-    box-shadow: 6px 0px 3px 0px rgba(0, 0, 0, 0.05);
+    box-shadow: 6px 0px 3px 0px var(--te-base-box-shadow-rgba-3);
     border-right: none;
     border-left: none;
   }
