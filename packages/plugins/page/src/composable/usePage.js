@@ -30,6 +30,7 @@ const { ELEMENT_TAG, COMPONENT_NAME } = constants
 import { useMessage } from '@opentiny/tiny-engine-meta-register'
 const { publish } = useMessage()
 const postLocationHistoryChanged = (data) => publish({ topic: 'locationHistoryChanged', data })
+import { getOptions } from '@opentiny/tiny-engine-meta-register'
 
 const DEFAULT_PAGE = {
   app: '',
@@ -73,6 +74,47 @@ const pageSettingState = reactive({
 const isTemporaryPage = reactive({
   saved: false
 })
+
+const generateCssString = (pageOptions, materialsOptions) => {
+  if (!pageOptions?.pageBaseStyle?.className || !pageOptions?.pageBaseStyle?.style) {
+    return ''
+  }
+
+  const formatCssRule = (className, style) => `.${className} {\n  ${style.trim()}\n}\n`
+  const baseStyle = `.${pageOptions.pageBaseStyle.className}{\r\n ${pageOptions.pageBaseStyle.style}\r\n}\r\n`
+
+  if (!materialsOptions.useBaseStyle) {
+    return baseStyle
+  }
+
+  return [
+    formatCssRule(pageOptions.pageBaseStyle.className, pageOptions.pageBaseStyle.style),
+    formatCssRule(materialsOptions.blockBaseStyle.className, materialsOptions.blockBaseStyle.style),
+    formatCssRule(materialsOptions.componentBaseStyle.className, materialsOptions.componentBaseStyle.style)
+  ].join('\n')
+}
+
+const getDefaultPage = () => {
+  const materialsOptions = getOptions('engine.plugins.materials')
+  const pageOptions = getOptions('engine.plugins.appmanage')
+
+  if (!materialsOptions || !pageOptions || !pageOptions.pageBaseStyle) {
+    return { ...DEFAULT_PAGE }
+  }
+
+  return {
+    ...DEFAULT_PAGE,
+    page_content: {
+      ...DEFAULT_PAGE.page_content,
+      props: {
+        ...DEFAULT_PAGE.page_content.props,
+        className: pageOptions.pageBaseStyle.className
+      },
+      css: generateCssString(pageOptions, materialsOptions)
+    }
+  }
+}
+
 const isCurrentDataSame = () => {
   const data = pageSettingState.currentPageData || {}
   const dataCopy = pageSettingState.currentPageDataCopy || {}
@@ -353,8 +395,8 @@ const getFamily = async (id) => {
 
 export default () => {
   return {
-    DEFAULT_PAGE,
     postLocationHistoryChanged,
+    getDefaultPage,
     selectedTemplateCard,
     pageSettingState,
     isTemporaryPage,

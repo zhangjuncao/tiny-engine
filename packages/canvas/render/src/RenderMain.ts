@@ -11,27 +11,22 @@
  */
 
 import { provide, watch, defineComponent, PropType, ref, inject, onUnmounted, h, Ref } from 'vue'
-
-import { useBroadcastChannel } from '@vueuse/core'
-import { constants } from '@opentiny/tiny-engine-utils'
-
 import { getDesignMode, setDesignMode, setController, useCustomRenderer, getController } from './canvas-function'
-import { setConfigure } from './material-function'
+import { removeBlockCompsCache, setConfigure } from './material-function'
 import { useUtils, useBridge, useDataSourceMap, useGlobalState } from './application-function'
 import { IPageSchema, useContext, usePageContext, useSchema } from './page-block-function'
 import { api, setCurrentApi } from './canvas-function/canvas-api'
 import { getPageAncestors } from './material-function/page-getter'
 import CanvasEmpty from './canvas-function/CanvasEmpty.vue'
 import { setCurrentPage } from './canvas-function/page-switcher'
-
-const { BROADCAST_CHANNEL } = constants
+import { useThrottleFn } from '@vueuse/core'
 
 // global-context singleton
 const { context: globalContext, setContext: setGlobalContext } = useContext()
-const { refreshKey, utils, getUtils, setUtils, updateUtils, deleteUtils } = useUtils(globalContext)
-const { bridge, setBridge, getBridge } = useBridge()
+const { refreshKey, utils, getUtils, setUtils } = useUtils(globalContext)
+const { bridge } = useBridge()
 const { getDataSourceMap, setDataSourceMap } = useDataSourceMap()
-const { getGlobalState, setGlobalState, stores } = useGlobalState()
+const { setGlobalState, stores } = useGlobalState()
 const updateGlobalContext = () => {
   const context = {
     utils,
@@ -46,20 +41,12 @@ const updateGlobalContext = () => {
   setGlobalContext(context, true)
 }
 updateGlobalContext()
-const activePageContext = usePageContext()
+export const activePageContext = usePageContext()
 
 const {
   schema: activeSchema,
-  getSchema,
   setSchema,
-  getState,
-  setState,
-  deleteState,
-  getProps,
-  setProps,
-  getMethods,
-  setMethods,
-  setPagecss
+  setPageCss
 } = useSchema(activePageContext, {
   utils,
   bridge,
@@ -67,43 +54,30 @@ const {
   getDataSourceMap
 })
 const { getRenderer, setRenderer } = useCustomRenderer()
-const getNode = (id, parent) => (id ? activePageContext.getNode(id, parent) : activeSchema)
-const { getContext, getRoot, setNode, setCondition, getCondition, getConditions } = activePageContext
+const { setCondition } = activePageContext
+const updateCanvas = () => {
+  refreshKey.value++
+}
 setCurrentApi({
   getUtils,
-  setUtils,
-  updateUtils,
-  deleteUtils,
-  getBridge,
-  setBridge,
-  getMethods,
-  setMethods,
   setController,
   setConfigure,
-  getSchema,
-  setSchema,
-  getState,
-  deleteState,
-  setState,
-  getProps,
-  setProps,
-  getContext,
-  getNode,
-  getRoot,
-  setPagecss,
   setCondition,
-  getCondition,
-  getConditions,
-  getGlobalState,
-  getDataSourceMap,
-  setDataSourceMap,
-  setGlobalState,
-  setNode,
   getRenderer,
   setRenderer,
   getDesignMode,
-  setDesignMode
+  setDesignMode,
+  removeBlockCompsCache,
+  updateCanvas
 })
+
+const throttleUpdateSchema = useThrottleFn(
+  () => {
+    window.host.patchLatestSchema(activeSchema)
+  },
+  100,
+  true
+)
 
 export default defineComponent({
   props: {
@@ -162,18 +136,83 @@ export default defineComponent({
       onUnmounted(() => {
         cancel()
       })
+
+      window.host.subscribe({
+        topic: 'schemaChange',
+        subscriber: 'canvasRenderer',
+        callback: throttleUpdateSchema
+      })
+
+      window.host.subscribe({
+        topic: 'schemaImport',
+        subscriber: 'canvasRenderer',
+        callback: () => {
+          setSchema(window.host.getSchema())
+        }
+      })
+
+      watch(
+        () => activeSchema.css,
+        (value) => {
+          setPageCss(value)
+        }
+      )
+
+      const utilsWatchCanceler = window.host.watch(
+        () => window.host.appSchema?.utils,
+        (data) => {
+          setUtils(data)
+        },
+        {
+          immediate: true,
+          deep: true
+        }
+      )
+
+      const dataSourceWatchCanceler = window.host.watch(
+        () => window.host.appSchema?.dataSource,
+        (data) => {
+          setDataSourceMap(data)
+        },
+        {
+          immediate: true,
+          deep: true
+        }
+      )
+
+      const globalStateWatchCanceler = window.host.watch(
+        () => window.host.appSchema?.globalState,
+        (data) => {
+          setGlobalState(data)
+        },
+        {
+          immediate: true,
+          deep: true
+        }
+      )
+
+      onUnmounted(() => {
+        window.host.unsubscribe({
+          topic: 'schemaChange',
+          subscriber: 'canvasRenderer'
+        })
+
+        window.host.unsubscribe({
+          topic: 'schemaImport',
+          subscriber: 'canvasRenderer'
+        })
+
+        utilsWatchCanceler()
+        dataSourceWatchCanceler()
+        globalStateWatchCanceler()
+      })
     }
 
     let schema = activeSchema
     let setCurrentSchema
-    let setCurrentMethod = setMethods
     if (pageContext.pageId && !props.active && !props.entry) {
       // 注意顶层使用activeSchema和对应的api
-      const {
-        schema: inActiveSchema,
-        setSchema: setInactiveSchema,
-        setMethods: setInactiveMethods
-      } = useSchema(pageContext, {
+      const { schema: inActiveSchema, setSchema: setInactiveSchema } = useSchema(pageContext, {
         utils,
         bridge,
         stores,
@@ -181,29 +220,9 @@ export default defineComponent({
       })
       schema = inActiveSchema
       setCurrentSchema = setInactiveSchema
-      setCurrentMethod = setInactiveMethods
     }
 
     provide('rootSchema', schema)
-
-    const { post } = useBroadcastChannel({ name: BROADCAST_CHANNEL.SchemaLength })
-    watch(
-      () => schema?.children?.length,
-      (length) => {
-        post(length)
-      }
-    )
-
-    // 这里监听schema.methods，为了保证methods上下文环境始终为最新
-    watch(
-      () => schema.methods,
-      (value) => {
-        setCurrentMethod(value, true)
-      },
-      {
-        deep: true
-      }
-    )
 
     if (!props.entry) {
       watch(
