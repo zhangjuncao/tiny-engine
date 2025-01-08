@@ -383,14 +383,27 @@ const switchPageWithConfirm = (pageId) => {
   })
 }
 
+const getPageDetailList = async (pages) => {
+  if (pages.length > 0 && !pages[0].page_content) {
+    for (const page of pages) {
+      const pageDetail = await http.fetchPageDetail(page.id)
+      page.page_content = pageDetail.page_content
+    }
+  }
+}
+
 const getFamily = async (id) => {
   if (pageSettingState.pages.length === 0) {
     await getPageList()
   }
 
-  return getAncestorsRecursively(id)
+  const familytPages = getAncestorsRecursively(id)
     .filter((item) => item.isPage)
     .reverse()
+
+  await getPageDetailList(familytPages)
+
+  return familytPages
 }
 
 export default () => {
