@@ -203,10 +203,6 @@ export default {
     &:not(.disabled):hover {
       background-color: var(--ti-lowcode-toolbar-button-bg);
     }
-
-    .save-title {
-      margin: 0 6px;
-    }
   }
 
   :deep(.icon-down-arrow:focus) {

@@ -1,6 +1,6 @@
 <template>
   <tiny-form
-    ref="createData"
+    ref="createDataForm"
     label-position="top"
     class="create-form"
     :model="state.createData"
@@ -279,7 +279,7 @@ export default {
       state.errorMessage = ''
 
       if (!name) {
-        state.errorMessage = 'state 属性名称未定义'
+        state.errorMessage = '输入内容不能为空'
       } else if (!verifyJsVarName(name)) {
         state.errorMessage = ' state 属性名称只能以字母或下划线开头且仅包含数字字母及下划线'
       } else if (
@@ -370,6 +370,22 @@ export default {
       emit('close')
     }
 
+    const createDataForm = ref(null)
+
+    const validateForm = () => {
+      return new Promise((resolve) => {
+        createDataForm.value.validate((valid) => {
+          if (valid) {
+            resolve()
+          }
+        })
+      })
+    }
+
+    const clearValidateForm = () => {
+      createDataForm.value?.clearValidate()
+    }
+
     const options = {
       lineNumbers: true,
       language: 'javascript',
@@ -404,7 +420,10 @@ export default {
       getFormData,
       insertContent,
       fullscreenChange,
-      cancel
+      cancel,
+      validateForm,
+      createDataForm,
+      clearValidateForm
     }
   }
 }

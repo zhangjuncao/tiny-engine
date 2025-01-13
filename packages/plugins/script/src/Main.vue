@@ -151,10 +151,8 @@ export default {
       align-items: center;
 
       .save-btn {
-        width: 40px;
-        padding: 0;
         min-width: 40px;
-        margin-right: 12px;
+        margin-right: 8px;
         height: 24px;
         line-height: 24px;
         .dots {
@@ -166,9 +164,6 @@ export default {
           top: 9px;
           right: 34px;
         }
-      }
-      .icon-wrap {
-        width: auto;
       }
     }
   }
