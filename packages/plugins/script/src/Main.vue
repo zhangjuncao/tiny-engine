@@ -58,6 +58,15 @@ export default {
       minimap: {
         enabled: false
       },
+      placeholder: `// ✅ 函数声明可以保存
+      \n function topLevelFunction(){ \n
+      \u200B \u200B const message = 'hello tiny-engine.' \n
+      \u200B \u200B console.log(message) 
+      \n }
+      \n 
+      // ❌ 顶层/常规 变量声明 \n const someVariable = 42 \n
+      // ❌ 表达式 \n const result = someVariable + 10`,
+
       // 禁用滚动条边边一直显示的边框
       overviewRulerBorder: false,
       renderLineHighlightOnlyWhenFocus: true
