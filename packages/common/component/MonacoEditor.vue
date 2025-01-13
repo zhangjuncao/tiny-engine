@@ -33,6 +33,7 @@
         :options="editorOptions"
         language="javascript"
         @editorDidMount="$emit('editorDidMount', $event)"
+        @change="$emit('change', $event)"
       ></monaco-editor>
     </div>
     <slot v-if="fullscreen" name="fullscreenFooter"></slot>
@@ -67,8 +68,8 @@ export default {
       default: true
     }
   },
-  emits: ['editorDidMount'],
-  setup(props) {
+  emits: ['editorDidMount', 'change', 'fullscreenChange'],
+  setup(props, { emit }) {
     const editor = ref(null)
     const fullscreen = ref(false)
     const editorOptions = computed(() => {
@@ -119,6 +120,7 @@ export default {
 
     const switchFullScreen = (value) => {
       fullscreen.value = value
+      emit('fullscreenChange', value)
     }
 
     return {
