@@ -24,8 +24,8 @@
         >
           <template #row-suffix="{ node }">
             <div :class="['actions']">
-              <svg-icon v-if="isPageLocked(node.rawData)" name="locked"></svg-icon>
-              <svg-icon v-if="node.rawData.isHome" name="home"></svg-icon>
+              <svg-button v-if="isPageLocked(node.rawData)" name="locked" :hoverBgColor="false"></svg-button>
+              <svg-button v-if="node.rawData.isHome" name="home" :hoverBgColor="false"></svg-button>
               <tiny-popover
                 :ref="(el) => setPopoverRef(el, node.id)"
                 placement="bottom-start"
@@ -43,7 +43,7 @@
                   </div>
                 </div>
                 <template #reference>
-                  <svg-icon name="ellipsis" class="auto-hidden"></svg-icon>
+                  <svg-button name="ellipsis" class="auto-hidden" :hoverBgColor="false"></svg-button>
                 </template>
               </tiny-popover>
             </div>
@@ -75,6 +75,7 @@ import { closePageSettingPanel } from './PageSetting.vue'
 import { closeFolderSettingPanel } from './PageFolderSetting.vue'
 import http from './http.js'
 import DraggbleTree from './Tree.vue'
+import { SvgButton } from '@opentiny/tiny-engine-common'
 
 const { PAGE_STATUS } = constants
 
@@ -85,7 +86,8 @@ export default {
     TinyCollapseItem: CollapseItem,
     TinyIconSearch: IconSearch(),
     TinyPopover: Popover,
-    DraggbleTree
+    DraggbleTree,
+    SvgButton
   },
   props: {
     isFolder: {
@@ -398,9 +400,6 @@ export default {
         border: none;
       }
     }
-    .title {
-      margin-left: 6px;
-    }
   }
   :deep(.tiny-collapse-item) {
     border-left: 0;
@@ -418,56 +417,9 @@ export default {
 }
 
 .app-manage-tree {
-  :deep(.tiny-tree) {
-    .tiny-tree-node__label {
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      flex: 1;
-
-      & > .svg-icon {
-        margin-right: 4px;
-      }
-      .svg-icon {
-        color: var(--te-common-icon-secondary);
-      }
-      & .label {
-        font-size: 12px;
-        flex: 1;
-      }
-    }
-
-    .tree-node-icon {
-      margin-right: 0;
-    }
-
-    .svg-icon {
-      width: 14px;
-      height: 14px;
-    }
-
-    .icons {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .tiny-tree-node.is-leaf .tiny-tree-node__content {
-      padding-left: 0;
-    }
-
-    .tiny-tree-node.is-current {
-      & > .tiny-tree-node__content {
-        & > div > .tiny-tree-node__content-box {
-          background-color: var(--te-common-bg-container);
-        }
-      }
-    }
-  }
   .actions {
     display: flex;
     align-items: center;
-    gap: 8px;
     svg {
       color: var(--te-common-icon-secondary);
       outline: none;

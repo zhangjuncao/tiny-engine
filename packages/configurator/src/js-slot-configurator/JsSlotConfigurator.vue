@@ -120,7 +120,6 @@ export default {
         useModal().confirm({
           title: '提示',
           message: '关闭后插槽内的内容将被清空，是否继续？',
-          status: 'info',
           exec: () => {
             slotList.value[idx].bind = false
             operateNode({ type: 'delete', id: slotData[name].value[0].id })
@@ -269,7 +268,9 @@ export default {
   border-radius: 10px;
   box-sizing: border-box;
   background-color: var(--te-common-bg-switch);
-  transition: border-color 0.3s, background-color 0.3s;
+  transition:
+    border-color 0.3s,
+    background-color 0.3s;
   vertical-align: middle;
 }
 
