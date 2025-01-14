@@ -10,7 +10,7 @@
  *
  */
 
-import { provide, watch, defineComponent, PropType, ref, inject, onUnmounted, h, Ref } from 'vue'
+import { provide, watch, defineComponent, ref, inject, onUnmounted, h, type PropType, type Ref } from 'vue'
 import {
   getDesignMode,
   setDesignMode,
@@ -95,29 +95,28 @@ export default defineComponent({
     entry: {
       // 页面入口
       type: Boolean,
-      require: false,
       default: true
     },
     cssScopeId: {
       type: String,
-      require: false,
       default: null
     },
     parentContext: {
-      type: Object,
-      require: false,
+      type: Object as PropTye<ReturnType<typeof useContext>>,
       default: null
     },
     renderSchema: {
       type: Object as PropType<IPageSchema>,
-      require: false,
       default: null
     },
     active: {
       type: Boolean,
       default: false
     },
-    pageId: String
+    pageId: {
+      type: String,
+      default: null
+    }
   },
   setup(props) {
     const pageAncestors = (inject('page-ancestors') as Ref<any[]>) || ref(null)
