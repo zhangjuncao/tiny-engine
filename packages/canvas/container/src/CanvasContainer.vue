@@ -33,7 +33,7 @@
 <script>
 import { onMounted, ref, computed, onUnmounted, watch, watchEffect } from 'vue'
 import { iframeMonitoring } from '@opentiny/tiny-engine-common/js/monitor'
-import { useTranslate, useCanvas, useMaterial, useMessage, useResource } from '@opentiny/tiny-engine-meta-register'
+import { useTranslate, useCanvas, useMessage, useResource } from '@opentiny/tiny-engine-meta-register'
 import { NODE_UID, NODE_LOOP, DESIGN_MODE } from '../../common'
 import { registerHostkeyEvent, removeHostkeyEvent } from './keyboard'
 import CanvasMenu, { closeMenu, openMenu } from './components/CanvasMenu.vue'
@@ -117,7 +117,8 @@ export default {
     const beforeCanvasReady = () => {
       if (iframe.value) {
         const win = iframe.value.contentWindow
-        win.thirdPartyDeps = useMaterial().materialState.thirdPartyDeps
+        // 用于画布初始化组件依赖
+        win.componentsDeps = useResource().appSchemaState.materialsDeps.scripts.filter((item) => item.components)
 
         const { subscribe, unsubscribe } = useMessage()
         const { getSchemaDiff, patchLatestSchema, getSchema, getNode } = useCanvas()

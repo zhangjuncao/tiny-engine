@@ -899,6 +899,5 @@ export const initCanvas = ({ renderer, iframe, emit, controller }) => {
   }
 
   setConfigure(useMaterial().getConfigureMap())
-  canvasDispatch('updateDependencies', { detail: useMaterial().materialState.thirdPartyDeps })
   canvasState.loading = false
 }
